@@ -3,63 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamrip Web Search</title>
+    <title>Steamrip Cloud Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+    
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        input { width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 5px; border: none; }
-        .game-item { background: #333; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; }
-        .game-item:hover { background: #444; }
-        #link-display { background: #000; padding: 20px; border: 1px solid #00ff00; margin-top: 20px; display: none; }
-        .loading { color: yellow; font-style: italic; }
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container { width: 100%; max-width: 600px; }
+
+        h1 { font-weight: 700; color: var(--accent); margin-bottom: 10px; text-align: center; }
+        p.subtitle { text-align: center; color: #94a3b8; margin-bottom: 30px; }
+
+        /* The Search Bar - Softer edges & Glow */
+        .search-container { position: relative; width: 100%; }
+        input { 
+            width: 100%; 
+            padding: 15px 20px; 
+            font-size: 16px;
+            background: var(--card);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+
+        /* Game Cards */
+        #results { margin-top: 20px; }
+        .game-item { 
+            background: var(--card); 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            border-radius: 12px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s;
+            border: 1px solid transparent;
+        }
+        .game-item:hover { 
+            transform: translateY(-2px); 
+            border-color: #475569;
+            background: #253347;
+        }
+
+        /* Loading & Results */
+        #link-display { 
+            background: #020617; 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--accent);
+            margin-top: 20px; 
+            display: none; 
+            word-break: break-all;
+        }
+        .btn-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: var(--accent);
+            color: var(--bg);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Steamrip Search</h1>
-    <input type="text" id="searchBox" placeholder="Type a game name...">
-    
-    <div id="results"></div>
-    <div id="link-display"></div>
+    <div class="container">
+        <h1>Steamrip Browser</h1>
+        <p class="subtitle">Search your database for direct links</p>
+
+        <div class="search-container">
+            <input type="text" id="searchBox" placeholder="Search for a game (e.g. 'Elden Ring')...">
+        </div>
+        
+        <div id="results"></div>
+        <div id="link-display"></div>
+    </div>
 
     <script>
-        let gamesData = [];
+        let fuse;
 
-        // 1. Load your JSON file
+        // 1. Load Data & Initialize Fuzzy Search
         fetch('links_reformatted.json')
             .then(res => res.json())
-            .then(data => { gamesData = data; });
+            .then(data => {
+                // Set up Fuse.js
+                fuse = new Fuse(data, {
+                    keys: ['name'],
+                    threshold: 0.4, // 0.0 is perfect match, 1.0 is anything. 0.4 is "forgiving"
+                    distance: 100
+                });
+            });
 
-        // 2. Search Function
         const searchBox = document.getElementById('searchBox');
         const resultsDiv = document.getElementById('results');
 
         searchBox.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
+            const query = e.target.value;
             if (query.length < 2) { resultsDiv.innerHTML = ''; return; }
 
-            const matches = gamesData.filter(g => g.name.toLowerCase().includes(query)).slice(0, 10);
+            // Perform fuzzy search
+            const results = fuse.search(query).slice(0, 8);
             
-            resultsDiv.innerHTML = matches.map(g => `
-                <div class="game-item" onclick="fetchLinks('${g.url}')">
-                    <strong>${g.name}</strong>
+            resultsDiv.innerHTML = results.map(result => `
+                <div class="game-item" onclick="fetchLinks('${result.item.url}')">
+                    <span>${result.item.name}</span>
+                    <span style="color:var(--accent)">➔</span>
                 </div>
             `).join('');
         });
 
-        // 3. Deobfuscate Logic (The Python logic converted to JS)
         async function fetchLinks(gameUrl) {
             const display = document.getElementById('link-display');
             display.style.display = 'block';
-            display.innerHTML = '<p class="loading">Bypassing security... please wait...</p>';
+            display.innerHTML = '<p style="color:var(--accent)">Unpacking links... please wait...</p>';
 
             try {
-                // We use a proxy to avoid CORS errors
+                // Use a proxy to grab the page content
                 const proxy = "https://api.allorigins.win/get?url=";
                 const response = await fetch(proxy + encodeURIComponent(gameUrl));
                 const data = await response.json();
                 const html = data.contents;
 
-                // Look for the obfuscated string (The math from your main_ui.py)
+                // Logic from your main_ui.py
                 const match = html.match(/_0x44b739='(.*?)'/);
                 if (match) {
                     let obfuscated = match[1];
@@ -68,12 +157,16 @@
                     let part2 = obfuscated.substring(half).split('').reverse().join('');
                     let finalUrl = part1 + part2;
                     
-                    display.innerHTML = `<h3>Links Found:</h3><a href="${finalUrl}" target="_blank" style="color: #00ff00;">${finalUrl}</a>`;
+                    display.innerHTML = `
+                        <strong style="color:white">Download Link Found:</strong><br>
+                        <small style="color:#94a3b8">${finalUrl}</small><br>
+                        <a href="${finalUrl}" target="_blank" class="btn-link">Open Download Page</a>
+                    `;
                 } else {
-                    display.innerHTML = "No links found on this page.";
+                    display.innerHTML = "Couldn't find the hidden link. Try another game.";
                 }
             } catch (err) {
-                display.innerHTML = "Error fetching links. Steamrip might be blocking the request.";
+                display.innerHTML = "Connection error. The proxy might be busy.";
             }
         }
     </script>

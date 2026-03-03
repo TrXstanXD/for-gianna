@@ -3,171 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamrip Cloud Search</title>
+    <title>Steamrip Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --text: #f1f5f9;
+            --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
+            --text: #f1f5f9; --hover: #2dd4bf;
         }
 
         body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg); 
-            color: var(--text); 
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
+            font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
+            margin: 0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px;
         }
 
-        .container { width: 100%; max-width: 600px; }
-
-        h1 { font-weight: 700; color: var(--accent); margin-bottom: 10px; text-align: center; }
-        p.subtitle { text-align: center; color: #94a3b8; margin-bottom: 30px; }
-
-        /* The Search Bar - Softer edges & Glow */
-        .search-container { position: relative; width: 100%; }
-        input { 
-            width: 100%; 
-            padding: 15px 20px; 
-            font-size: 16px;
-            background: var(--card);
-            border: 2px solid #334155;
-            border-radius: 12px;
-            color: white;
-            outline: none;
-            transition: all 0.3s;
-            box-sizing: border-box;
-        }
+        .container { width: 100%; max-width: 700px; }
+        h1 { font-weight: 700; color: var(--accent); text-align: center; margin-bottom: 5px; }
+        
+        /* Layout for Buttons */
+        .controls { display: flex; gap: 10px; margin-bottom: 25px; }
+        input { flex: 3; padding: 15px; background: var(--card); border: 2px solid #334155; border-radius: 12px; color: white; outline: none; transition: 0.3s; }
         input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
 
-        /* Game Cards */
-        #results { margin-top: 20px; }
+        /* Surprise Me Button */
+        .btn-surprise { 
+            flex: 1; background: linear-gradient(135deg, var(--accent), #818cf8); 
+            border: none; border-radius: 12px; color: var(--bg); font-weight: bold; 
+            cursor: pointer; transition: transform 0.2s, filter 0.2s;
+        }
+        .btn-surprise:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn-surprise:active { transform: scale(0.95); }
+
+        /* Daily Section */
+        .section-title { font-size: 14px; text-transform: uppercase; color: #64748b; margin: 20px 0 10px 5px; letter-spacing: 1px; }
+        .daily-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px; }
+        .daily-card { 
+            background: #1e293b70; padding: 12px; border-radius: 10px; text-align: center; 
+            font-size: 12px; border: 1px border: 1px solid #334155; cursor: pointer; transition: 0.3s;
+        }
+        .daily-card:hover { border-color: var(--hover); background: var(--card); color: var(--hover); }
+
+        /* Results & Hovering */
         .game-item { 
-            background: var(--card); 
-            padding: 15px; 
-            margin-bottom: 12px; 
-            border-radius: 12px; 
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: transform 0.2s;
-            border: 1px solid transparent;
+            background: var(--card); padding: 15px; margin-bottom: 10px; border-radius: 12px; 
+            cursor: pointer; display: flex; align-items: center; gap: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #334155;
         }
         .game-item:hover { 
-            transform: translateY(-2px); 
-            border-color: #475569;
-            background: #253347;
+            transform: translateX(8px); border-color: var(--accent); background: #24344d;
         }
+        .game-icon { width: 40px; height: 40px; background: #334155; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
 
-        /* Loading & Results */
         #link-display { 
-            background: #020617; 
-            padding: 20px; 
-            border-radius: 12px; 
-            border: 1px solid var(--accent);
-            margin-top: 20px; 
-            display: none; 
-            word-break: break-all;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 500px; background: #020617; padding: 20px; 
+            border-radius: 16px; border: 2px solid var(--accent); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: none; z-index: 100;
         }
-        .btn-link {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 10px 20px;
-            background: var(--accent);
-            color: var(--bg);
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
+        .close-btn { float: right; cursor: pointer; color: #64748b; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Steamrip Browser</h1>
-        <p class="subtitle">Search your database for direct links</p>
+        <h1>Steamrip Hub</h1>
+        
+        <div class="section-title">Daily Picks (Refreshes at Midnight)</div>
+        <div id="dailyPicks" class="daily-grid"></div>
 
-        <div class="search-container">
-            <input type="text" id="searchBox" placeholder="Search for a game (e.g. 'Elden Ring')...">
+        <div class="controls">
+            <input type="text" id="searchBox" placeholder="Search games...">
+            <button class="btn-surprise" onclick="surpriseMe()">Surprise Me!</button>
         </div>
         
         <div id="results"></div>
-        <div id="link-display"></div>
+    </div>
+
+    <div id="link-display">
+        <span class="close-btn" onclick="document.getElementById('link-display').style.display='none'">✕</span>
+        <div id="link-content"></div>
     </div>
 
     <script>
+        let gamesData = [];
         let fuse;
 
-        // 1. Load Data & Initialize Fuzzy Search
         fetch('links_reformatted.json')
             .then(res => res.json())
             .then(data => {
-                // Set up Fuse.js
-                fuse = new Fuse(data, {
-                    keys: ['name'],
-                    threshold: 0.4, // 0.0 is perfect match, 1.0 is anything. 0.4 is "forgiving"
-                    distance: 100
-                });
+                gamesData = data;
+                fuse = new Fuse(data, { keys: ['name'], threshold: 0.4 });
+                setupDailyGames();
             });
 
-        const searchBox = document.getElementById('searchBox');
-        const resultsDiv = document.getElementById('results');
+        // --- Daily Games Logic ---
+        function setupDailyGames() {
+            const today = new Date().toDateString();
+            let daily = JSON.parse(localStorage.getItem('daily_games'));
 
+            // If it's a new day or no daily games exist, pick 5 new ones
+            if (!daily || daily.date !== today) {
+                const shuffled = [...gamesData].sort(() => 0.5 - Math.random());
+                daily = { date: today, games: shuffled.slice(0, 5) };
+                localStorage.setItem('daily_games', JSON.stringify(daily));
+            }
+
+            document.getElementById('dailyPicks').innerHTML = daily.games.map(g => `
+                <div class="daily-card" onclick="fetchLinks('${g.url}')">
+                    ${g.name.length > 25 ? g.name.substring(0, 25) + '...' : g.name}
+                </div>
+            `).join('');
+        }
+
+        // --- Surprise Me Logic ---
+        function surpriseMe() {
+            const randomGame = gamesData[Math.floor(Math.random() * gamesData.length)];
+            fetchLinks(randomGame.url);
+        }
+
+        // --- Search Logic ---
+        const searchBox = document.getElementById('searchBox');
         searchBox.addEventListener('input', (e) => {
             const query = e.target.value;
-            if (query.length < 2) { resultsDiv.innerHTML = ''; return; }
-
-            // Perform fuzzy search
-            const results = fuse.search(query).slice(0, 8);
+            if (query.length < 2) { document.getElementById('results').innerHTML = ''; return; }
+            const results = fuse.search(query).slice(0, 10);
             
-            resultsDiv.innerHTML = results.map(result => `
-                <div class="game-item" onclick="fetchLinks('${result.item.url}')">
-                    <span>${result.item.name}</span>
-                    <span style="color:var(--accent)">➔</span>
+            document.getElementById('results').innerHTML = results.map(r => `
+                <div class="game-item" onclick="fetchLinks('${r.item.url}')">
+                    <div class="game-icon">🎮</div>
+                    <span>${r.item.name}</span>
                 </div>
             `).join('');
         });
 
+        // --- Link Fetcher Logic ---
         async function fetchLinks(gameUrl) {
             const display = document.getElementById('link-display');
+            const content = document.getElementById('link-content');
             display.style.display = 'block';
-            display.innerHTML = '<p style="color:var(--accent)">Unpacking links... please wait...</p>';
+            content.innerHTML = '<p style="color:var(--accent)">Bypassing... ⏳</p>';
 
             try {
-                // Use a proxy to grab the page content
                 const proxy = "https://api.allorigins.win/get?url=";
                 const response = await fetch(proxy + encodeURIComponent(gameUrl));
                 const data = await response.json();
-                const html = data.contents;
-
-                // Logic from your main_ui.py
-                const match = html.match(/_0x44b739='(.*?)'/);
+                const match = data.contents.match(/_0x44b739='(.*?)'/);
+                
                 if (match) {
                     let obfuscated = match[1];
                     let half = Math.floor(obfuscated.length / 2);
-                    let part1 = obfuscated.substring(0, half).split('').reverse().join('');
-                    let part2 = obfuscated.substring(half).split('').reverse().join('');
-                    let finalUrl = part1 + part2;
+                    let finalUrl = obfuscated.substring(0, half).split('').reverse().join('') + 
+                                   obfuscated.substring(half).split('').reverse().join('');
                     
-                    display.innerHTML = `
-                        <strong style="color:white">Download Link Found:</strong><br>
-                        <small style="color:#94a3b8">${finalUrl}</small><br>
-                        <a href="${finalUrl}" target="_blank" class="btn-link">Open Download Page</a>
+                    content.innerHTML = `
+                        <h3 style="margin-top:0">Game Ready!</h3>
+                        <p style="font-size:12px; color:#94a3b8">${finalUrl}</p>
+                        <a href="${finalUrl}" target="_blank" style="display:block; text-align:center; padding:12px; background:var(--accent); color:black; text-decoration:none; border-radius:8px; font-weight:bold;">Download Now</a>
                     `;
-                } else {
-                    display.innerHTML = "Couldn't find the hidden link. Try another game.";
                 }
-            } catch (err) {
-                display.innerHTML = "Connection error. The proxy might be busy.";
-            }
+            } catch (err) { content.innerHTML = "Error grabbing link."; }
         }
     </script>
 </body>

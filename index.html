@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamrip Hub | Pro Edition</title>
+    <title>buttcheek</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <style>
@@ -18,21 +18,21 @@
 
         #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 20px; width: 100%; max-width: 1300px; box-sizing: border-box; }
         
-        .game-item { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #2d3748; transition: 0.2s; cursor: pointer; position: relative; }
-        .game-item:hover { border-color: var(--accent); }
-        .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; }
+        .game-item { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #2d3748; transition: 0.2s; cursor: pointer; }
+        .game-item:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; transition: opacity 0.3s; }
         
         .game-content { padding: 12px; }
         .game-title { font-weight: 700; font-size: 13px; height: 32px; overflow: hidden; line-height: 1.2; }
 
-        /* Pagination & Jump */
         .pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; align-items: center; background: var(--card); width: 100%; border-top: 1px solid #2d3748; }
-        .btn-page { padding: 8px 16px; background: #000; border: 1px solid #2d3748; color: white; border-radius: 8px; cursor: pointer; }
-        .jump-box { width: 50px; padding: 8px; background: #000; border: 1px solid var(--accent); color: white; border-radius: 8px; text-align: center; }
+        .btn-page { padding: 8px 16px; background: #000; border: 1px solid #2d3748; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-page:hover { border-color: var(--accent); }
+        .jump-box { width: 60px; padding: 8px; background: #000; border: 1px solid var(--accent); color: white; border-radius: 8px; text-align: center; }
 
         .details { display: none; padding-top: 10px; font-size: 11px; border-top: 1px solid #2d3748; margin-top: 8px; }
         .details.active { display: block; }
-        .dl-button { display: block; text-align: center; padding: 8px; background: var(--success); color: white; text-decoration: none; border-radius: 6px; font-weight: 800; margin-top: 8px; }
+        .dl-button { display: block; text-align: center; padding: 10px; background: var(--success); color: white; text-decoration: none; border-radius: 6px; font-weight: 800; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -45,7 +45,7 @@
             <button class="btn-page" onclick="changePage(-1)">Prev</button>
             <span id="pageInfo">Page 1</span>
             <button class="btn-page" onclick="changePage(1)">Next</button>
-            <input type="number" class="jump-box" id="jumpInput" placeholder="Go" onchange="jumpToPage(this.value)">
+            <input type="number" class="jump-box" id="jumpInput" placeholder="Page #">
         </div>
     </div>
 
@@ -56,8 +56,15 @@
         let filteredGames = [];
         let fuse;
         let currentPage = 1;
-        const itemsPerPage = 24;
-        const cache = JSON.parse(localStorage.getItem('steam_v8_cache') || '{}');
+        const itemsPerPage = 20;
+        const cache = JSON.parse(localStorage.getItem('steam_v9_cache') || '{}');
+
+        // Proxy list for rotation
+        const proxies = [
+            (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            (url) => `https://thingproxy.freeboard.io/fetch/${url}`
+        ];
 
         fetch('steamrip_games.json')
             .then(res => res.json())
@@ -86,46 +93,62 @@
                         <div class="game-title">${g.title.replace(' Free Download', '')}</div>
                         <div class="details" id="det-${i}">
                             <p>Size: ${g.file_size}</p>
+                            <p>Genre: ${g.genre}</p>
                             <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download</a>
-                            <p style="color:var(--accent); cursor:pointer; font-size:9px" onclick="retryImage('${i}', '${encodeURIComponent(g.title)}')">🔄 Retry Image</p>
                         </div>
                     </div>
                 `;
-                div.onclick = (e) => { if(e.target.tagName !== 'A' && e.target.tagName !== 'P') document.getElementById(`det-${i}`).classList.toggle('active'); };
+                div.onclick = (e) => { if(e.target.tagName !== 'A') document.getElementById(`det-${i}`).classList.toggle('active'); };
                 container.appendChild(div);
                 
-                // Staggered loading for the 24 items
-                setTimeout(() => updateImage(document.getElementById(`img-${i}`), g.title), i * 150);
+                // Fetch image for this specific card
+                fetchImageWithRetry(document.getElementById(`img-${i}`), g.title);
             });
 
             const totalPages = Math.ceil(filteredGames.length / itemsPerPage);
             document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
-            document.getElementById('jumpInput').max = totalPages;
         }
 
-        async function updateImage(imgElement, title) {
-            const clean = title.replace(/Free Download/gi, '').replace(/\(.*\)/g, '').replace(/\[.*\]/g, '').split(':')[0].trim();
-            if (cache[clean]) { imgElement.src = cache[clean]; return; }
+        function cleanTitle(title) {
+            return title.replace(/Free Download/gi, '')
+                        .replace(/\(.*\)/g, '')
+                        .replace(/\[.*\]/g, '')
+                        .replace(/\s[A-Z]\d(\s|$)/g, ' ') // Removes K2, M1, 1r etc.
+                        .replace(/v\d+(\.\d+)*/g, '')
+                        .split(':')[0].trim();
+        }
 
-            try {
-                const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + clean)}`;
-                const res = await fetch(url);
-                const data = await res.json();
-                const json = JSON.parse(data.contents);
+        async function fetchImageWithRetry(imgElement, title) {
+            const name = cleanTitle(title);
+            if (cache[name]) { imgElement.src = cache[name]; return; }
 
-                if (json.items && json.items.length > 0) {
-                    const imgUrl = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${json.items[0].id}/header.jpg`;
-                    cache[clean] = imgUrl;
-                    localStorage.setItem('steam_v8_cache', JSON.stringify(cache));
-                    imgElement.src = imgUrl;
-                } else { throw new Error(); }
-            } catch (e) {
-                imgElement.src = `https://placehold.co/600x400/161b2c/38bdf8?text=${clean.charAt(0)}`;
+            // Random delay to prevent spamming
+            await new Promise(r => setTimeout(r, Math.random() * 800));
+
+            const steamSearchUrl = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(name)}&l=english&cc=US`;
+
+            for (let proxyFn of proxies) {
+                try {
+                    const res = await fetch(proxyFn(steamSearchUrl));
+                    const data = await res.json();
+                    // Some proxies return the JSON inside a "contents" string
+                    const json = data.contents ? JSON.parse(data.contents) : data;
+
+                    if (json.items && json.items.length > 0) {
+                        const appId = json.items[0].id;
+                        const finalImg = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+                        cache[name] = finalImg;
+                        localStorage.setItem('steam_v9_cache', JSON.stringify(cache));
+                        imgElement.src = finalImg;
+                        return; // Exit if successful
+                    }
+                } catch (e) {
+                    console.warn(`Proxy failed for ${name}, trying next...`);
+                    continue;
+                }
             }
-        }
-
-        function retryImage(id, title) {
-            updateImage(document.getElementById(`img-${id}`), decodeURIComponent(title));
+            // All proxies failed or no game found
+            imgElement.src = `https://placehold.co/600x400/161b2c/38bdf8?text=${name.charAt(0)}`;
         }
 
         function changePage(dir) {
@@ -134,14 +157,14 @@
             renderPage();
         }
 
-        function jumpToPage(val) {
-            const page = parseInt(val);
+        document.getElementById('jumpInput').addEventListener('change', (e) => {
+            const page = parseInt(e.target.value);
             const totalPages = Math.ceil(filteredGames.length / itemsPerPage);
             if (page >= 1 && page <= totalPages) {
                 currentPage = page;
                 renderPage();
             }
-        }
+        });
 
         searchBox.addEventListener('input', (e) => {
             currentPage = 1;

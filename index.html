@@ -3,166 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamrip Hub</title>
+    <title>Steamrip Database</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
-    
     <style>
-        :root {
-            --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
-            --text: #f1f5f9; --hover: #2dd4bf;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
-            margin: 0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px;
-        }
-
-        .container { width: 100%; max-width: 700px; }
-        h1 { font-weight: 700; color: var(--accent); text-align: center; margin-bottom: 5px; }
+        :root { --bg: #0b0f1a; --card: #161b2c; --accent: #38bdf8; --text: #f1f5f9; --hover: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 800px; }
         
-        /* Layout for Buttons */
-        .controls { display: flex; gap: 10px; margin-bottom: 25px; }
-        input { flex: 3; padding: 15px; background: var(--card); border: 2px solid #334155; border-radius: 12px; color: white; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
-
-        /* Surprise Me Button */
-        .btn-surprise { 
-            flex: 1; background: linear-gradient(135deg, var(--accent), #818cf8); 
-            border: none; border-radius: 12px; color: var(--bg); font-weight: bold; 
-            cursor: pointer; transition: transform 0.2s, filter 0.2s;
-        }
-        .btn-surprise:hover { transform: scale(1.05); filter: brightness(1.1); }
-        .btn-surprise:active { transform: scale(0.95); }
+        /* Header & Search */
+        .header { text-align: center; margin-bottom: 30px; }
+        .search-area { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 10px; z-index: 10; }
+        input { flex: 1; padding: 15px; background: var(--card); border: 2px solid #2d3748; border-radius: 12px; color: white; outline: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        input:focus { border-color: var(--accent); }
+        .btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-surprise { background: var(--accent); color: #000; }
 
         /* Daily Section */
-        .section-title { font-size: 14px; text-transform: uppercase; color: #64748b; margin: 20px 0 10px 5px; letter-spacing: 1px; }
-        .daily-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px; }
-        .daily-card { 
-            background: #1e293b70; padding: 12px; border-radius: 10px; text-align: center; 
-            font-size: 12px; border: 1px border: 1px solid #334155; cursor: pointer; transition: 0.3s;
-        }
-        .daily-card:hover { border-color: var(--hover); background: var(--card); color: var(--hover); }
+        .section-title { font-size: 12px; text-transform: uppercase; color: #64748b; margin: 20px 0 10px; letter-spacing: 1px; }
+        .daily-grid { display: grid; grid-gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 30px; }
+        .daily-card { background: var(--card); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; border: 1px solid #2d3748; text-align: center; }
 
-        /* Results & Hovering */
-        .game-item { 
-            background: var(--card); padding: 15px; margin-bottom: 10px; border-radius: 12px; 
-            cursor: pointer; display: flex; align-items: center; gap: 15px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #334155;
-        }
-        .game-item:hover { 
-            transform: translateX(8px); border-color: var(--accent); background: #24344d;
-        }
-        .game-icon { width: 40px; height: 40px; background: #334155; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        /* Game Items & Dropdown */
+        .game-item { background: var(--card); border-radius: 12px; margin-bottom: 10px; overflow: hidden; border: 1px solid #2d3748; transition: 0.3s; }
+        .game-header { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .game-header:hover { background: var(--hover); }
+        .game-title { font-weight: 600; font-size: 16px; }
+        
+        .details { display: none; padding: 20px; background: #0f172a; border-top: 1px solid #2d3748; animation: slideDown 0.3s ease-out; }
+        .details.active { display: block; }
+        
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 13px; }
+        .meta-item span { color: #64748b; display: block; font-size: 11px; }
+        
+        .dl-button { display: block; text-align: center; padding: 12px; background: #22c55e; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        .dl-button:hover { background: #16a34a; }
 
-        #link-display { 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 500px; background: #020617; padding: 20px; 
-            border-radius: 16px; border: 2px solid var(--accent); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            display: none; z-index: 100;
-        }
-        .close-btn { float: right; cursor: pointer; color: #64748b; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Steamrip Hub</h1>
-        
-        <div class="section-title">Daily Picks (Refreshes at Midnight)</div>
-        <div id="dailyPicks" class="daily-grid"></div>
-
-        <div class="controls">
-            <input type="text" id="searchBox" placeholder="Search games...">
-            <button class="btn-surprise" onclick="surpriseMe()">Surprise Me!</button>
+        <div class="header">
+            <h1>Steamrip Browser 2.0</h1>
+            <p style="color:#64748b">Instant database access with details</p>
         </div>
-        
+
+        <div class="section-title">Editor's Daily Choices</div>
+        <div id="dailyGrid" class="daily-grid"></div>
+
+        <div class="search-area">
+            <input type="text" id="searchBox" placeholder="Search 10,000+ games (Fuzzy search enabled)...">
+            <button class="btn btn-surprise" onclick="surpriseMe()">Surprise Me</button>
+        </div>
+
         <div id="results"></div>
     </div>
 
-    <div id="link-display">
-        <span class="close-btn" onclick="document.getElementById('link-display').style.display='none'">✕</span>
-        <div id="link-content"></div>
-    </div>
-
     <script>
-        let gamesData = [];
+        let allGames = [];
         let fuse;
 
-        fetch('links_reformatted.json')
+        // Load new JSON
+        fetch('steamrip_games.json')
             .then(res => res.json())
             .then(data => {
-                gamesData = data;
-                fuse = new Fuse(data, { keys: ['name'], threshold: 0.4 });
-                setupDailyGames();
+                allGames = data.downloads; // Access the 'downloads' array
+                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.35 });
+                setupDaily();
             });
 
-        // --- Daily Games Logic ---
-        function setupDailyGames() {
+        function setupDaily() {
             const today = new Date().toDateString();
-            let daily = JSON.parse(localStorage.getItem('daily_games'));
-
-            // If it's a new day or no daily games exist, pick 5 new ones
+            let daily = JSON.parse(localStorage.getItem('daily_v2'));
             if (!daily || daily.date !== today) {
-                const shuffled = [...gamesData].sort(() => 0.5 - Math.random());
-                daily = { date: today, games: shuffled.slice(0, 5) };
-                localStorage.setItem('daily_games', JSON.stringify(daily));
+                const shuffled = [...allGames].sort(() => 0.5 - Math.random());
+                daily = { date: today, games: shuffled.slice(0, 4) };
+                localStorage.setItem('daily_v2', JSON.stringify(daily));
             }
-
-            document.getElementById('dailyPicks').innerHTML = daily.games.map(g => `
-                <div class="daily-card" onclick="fetchLinks('${g.url}')">
-                    ${g.name.length > 25 ? g.name.substring(0, 25) + '...' : g.name}
-                </div>
-            `).join('');
+            renderGames(daily.games, document.getElementById('dailyGrid'), true);
         }
 
-        // --- Surprise Me Logic ---
         function surpriseMe() {
-            const randomGame = gamesData[Math.floor(Math.random() * gamesData.length)];
-            fetchLinks(randomGame.url);
+            const random = allGames[Math.floor(Math.random() * allGames.length)];
+            const results = document.getElementById('results');
+            results.innerHTML = ""; // Clear current
+            renderGames([random], results);
+            toggleDetails(document.getElementById('details-0')); // Auto open
         }
 
-        // --- Search Logic ---
         const searchBox = document.getElementById('searchBox');
         searchBox.addEventListener('input', (e) => {
             const query = e.target.value;
             if (query.length < 2) { document.getElementById('results').innerHTML = ''; return; }
-            const results = fuse.search(query).slice(0, 10);
-            
-            document.getElementById('results').innerHTML = results.map(r => `
-                <div class="game-item" onclick="fetchLinks('${r.item.url}')">
-                    <div class="game-icon">🎮</div>
-                    <span>${r.item.name}</span>
-                </div>
-            `).join('');
+            const results = fuse.search(query).slice(0, 15);
+            renderGames(results.map(r => r.item), document.getElementById('results'));
         });
 
-        // --- Link Fetcher Logic ---
-        async function fetchLinks(gameUrl) {
-            const display = document.getElementById('link-display');
-            const content = document.getElementById('link-content');
-            display.style.display = 'block';
-            content.innerHTML = '<p style="color:var(--accent)">Bypassing... ⏳</p>';
+        function renderGames(games, container, isDaily = false) {
+            container.innerHTML = games.map((g, i) => `
+                <div class="game-item">
+                    <div class="game-header" onclick="toggleDetails('details-${isDaily ? 'd' : ''}${i}')">
+                        <span class="game-title">${g.title.replace(' Free Download', '')}</span>
+                        <span style="color:var(--accent)">${isDaily ? '' : '▼'}</span>
+                    </div>
+                    <div id="details-${isDaily ? 'd' : ''}${i}" class="details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span>VERSION</span>${g.version || 'N/A'}</div>
+                            <div class="meta-item"><span>SIZE</span>${g.file_size || 'Unknown'}</div>
+                            <div class="meta-item"><span>GENRE</span>${g.genre || 'Various'}</div>
+                            <div class="meta-item"><span>UPLOADED</span>${new Date(g.upload_date).toLocaleDateString()}</div>
+                        </div>
+                        ${g.download_urls.map(url => `
+                            <a href="${url}" target="_blank" class="dl-button">Download via Megadb</a>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
 
-            try {
-                const proxy = "https://api.allorigins.win/get?url=";
-                const response = await fetch(proxy + encodeURIComponent(gameUrl));
-                const data = await response.json();
-                const match = data.contents.match(/_0x44b739='(.*?)'/);
-                
-                if (match) {
-                    let obfuscated = match[1];
-                    let half = Math.floor(obfuscated.length / 2);
-                    let finalUrl = obfuscated.substring(0, half).split('').reverse().join('') + 
-                                   obfuscated.substring(half).split('').reverse().join('');
-                    
-                    content.innerHTML = `
-                        <h3 style="margin-top:0">Game Ready!</h3>
-                        <p style="font-size:12px; color:#94a3b8">${finalUrl}</p>
-                        <a href="${finalUrl}" target="_blank" style="display:block; text-align:center; padding:12px; background:var(--accent); color:black; text-decoration:none; border-radius:8px; font-weight:bold;">Download Now</a>
-                    `;
-                }
-            } catch (err) { content.innerHTML = "Error grabbing link."; }
+        function toggleDetails(id) {
+            const el = document.getElementById(id);
+            const isVisible = el.classList.contains('active');
+            // Close others
+            document.querySelectorAll('.details').forEach(d => d.classList.remove('active'));
+            if (!isVisible) el.classList.add('active');
         }
     </script>
 </body>

@@ -3,68 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello</title>
+    <title>Steamrip Hub | Pro Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <style>
         :root { --bg: #0b0f1a; --card: #161b2c; --accent: #38bdf8; --text: #f1f5f9; --success: #22c55e; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
         
-        .header { padding: 30px 20px; text-align: center; width: 100%; }
-        .header h1 { font-size: 2.5rem; margin: 0; color: var(--accent); font-weight: 900; }
+        .header { padding: 20px; text-align: center; }
+        .header h1 { font-size: 2rem; margin: 0; color: var(--accent); font-weight: 900; }
         
-        .search-container { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #2d3748; }
-        input { width: 90%; max-width: 600px; padding: 15px 25px; background: #000; border: 2px solid #2d3748; border-radius: 50px; color: white; outline: none; font-size: 16px; transition: 0.3s; }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+        .search-container { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #2d3748; gap: 10px; }
+        input { width: 90%; max-width: 500px; padding: 12px 20px; background: #000; border: 1px solid #2d3748; border-radius: 25px; color: white; outline: none; font-size: 15px; }
 
-        #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 20px; width: 100%; max-width: 1300px; box-sizing: border-box; }
+        #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 20px; width: 100%; max-width: 1300px; box-sizing: border-box; }
         
-        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #2d3748; transition: 0.2s; cursor: pointer; }
-        .game-item:hover { border-color: var(--accent); transform: scale(1.02); }
+        .game-item { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #2d3748; transition: 0.2s; cursor: pointer; position: relative; }
+        .game-item:hover { border-color: var(--accent); }
         .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; }
         
-        .game-content { padding: 15px; }
-        .game-title { font-weight: 700; font-size: 15px; height: 36px; overflow: hidden; line-height: 1.2; }
+        .game-content { padding: 12px; }
+        .game-title { font-weight: 700; font-size: 13px; height: 32px; overflow: hidden; line-height: 1.2; }
 
-        /* Pagination Buttons */
-        .pagination { display: flex; gap: 15px; padding: 40px; align-items: center; }
-        .btn-page { padding: 12px 25px; background: var(--card); border: 1px solid #2d3748; color: white; border-radius: 10px; cursor: pointer; font-weight: 700; transition: 0.2s; }
-        .btn-page:hover:not(:disabled) { background: var(--accent); color: black; }
-        .btn-page:disabled { opacity: 0.3; cursor: not-allowed; }
-        #pageInfo { font-weight: 700; color: #64748b; }
+        /* Pagination & Jump */
+        .pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; align-items: center; background: var(--card); width: 100%; border-top: 1px solid #2d3748; }
+        .btn-page { padding: 8px 16px; background: #000; border: 1px solid #2d3748; color: white; border-radius: 8px; cursor: pointer; }
+        .jump-box { width: 50px; padding: 8px; background: #000; border: 1px solid var(--accent); color: white; border-radius: 8px; text-align: center; }
 
-        .details { display: none; padding-top: 10px; margin-top: 10px; border-top: 1px solid #2d3748; font-size: 12px; }
+        .details { display: none; padding-top: 10px; font-size: 11px; border-top: 1px solid #2d3748; margin-top: 8px; }
         .details.active { display: block; }
-        .dl-button { display: block; text-align: center; padding: 10px; background: var(--success); color: white; text-decoration: none; border-radius: 8px; font-weight: 800; margin-top: 10px; }
+        .dl-button { display: block; text-align: center; padding: 8px; background: var(--success); color: white; text-decoration: none; border-radius: 6px; font-weight: 800; margin-top: 8px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Use a VPN to download, WIFI might block links!</h1>
-    </div>
+    <div class="header"><h1>Steamrip Hub</h1></div>
 
     <div class="search-container">
-        <input type="text" id="searchBox" placeholder="Search 10,000+ games instantly...">
+        <input type="text" id="searchBox" placeholder="Search games...">
+        <div class="pagination">
+            <button class="btn-page" onclick="changePage(-1)">Prev</button>
+            <span id="pageInfo">Page 1</span>
+            <button class="btn-page" onclick="changePage(1)">Next</button>
+            <input type="number" class="jump-box" id="jumpInput" placeholder="Go" onchange="jumpToPage(this.value)">
+        </div>
     </div>
 
     <div id="results"></div>
-
-    <div class="pagination">
-        <button class="btn-page" id="prevPage" onclick="changePage(-1)">Previous</button>
-        <span id="pageInfo">Page 1</span>
-        <button class="btn-page" id="nextPage" onclick="changePage(1)">Next</button>
-    </div>
 
     <script>
         let allGames = [];
         let filteredGames = [];
         let fuse;
         let currentPage = 1;
-        const itemsPerPage = 20;
-        const cache = JSON.parse(localStorage.getItem('steam_final_cache') || '{}');
+        const itemsPerPage = 24;
+        const cache = JSON.parse(localStorage.getItem('steam_v8_cache') || '{}');
 
-        // 1. Fetch Data
         fetch('steamrip_games.json')
             .then(res => res.json())
             .then(data => {
@@ -74,7 +68,6 @@
                 renderPage();
             });
 
-        // 2. Render Engine
         function renderPage() {
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
@@ -93,42 +86,37 @@
                         <div class="game-title">${g.title.replace(' Free Download', '')}</div>
                         <div class="details" id="det-${i}">
                             <p>Size: ${g.file_size}</p>
-                            <p>Genre: ${g.genre}</p>
                             <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download</a>
+                            <p style="color:var(--accent); cursor:pointer; font-size:9px" onclick="retryImage('${i}', '${encodeURIComponent(g.title)}')">🔄 Retry Image</p>
                         </div>
                     </div>
                 `;
-                div.onclick = () => document.getElementById(`det-${i}`).classList.toggle('active');
+                div.onclick = (e) => { if(e.target.tagName !== 'A' && e.target.tagName !== 'P') document.getElementById(`det-${i}`).classList.toggle('active'); };
                 container.appendChild(div);
                 
-                // Fetch image immediately for these 20
-                updateImage(document.getElementById(`img-${i}`), g.title);
+                // Staggered loading for the 24 items
+                setTimeout(() => updateImage(document.getElementById(`img-${i}`), g.title), i * 150);
             });
 
-            document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${Math.ceil(filteredGames.length / itemsPerPage)}`;
-            document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = end >= filteredGames.length;
+            const totalPages = Math.ceil(filteredGames.length / itemsPerPage);
+            document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('jumpInput').max = totalPages;
         }
 
-        // 3. Image Logic (Prioritized)
         async function updateImage(imgElement, title) {
             const clean = title.replace(/Free Download/gi, '').replace(/\(.*\)/g, '').replace(/\[.*\]/g, '').split(':')[0].trim();
-            
-            if (cache[clean]) {
-                imgElement.src = cache[clean];
-                return;
-            }
+            if (cache[clean]) { imgElement.src = cache[clean]; return; }
 
             try {
-                const proxySearch = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + clean)}`;
-                const res = await fetch(proxySearch);
+                const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + clean)}`;
+                const res = await fetch(url);
                 const data = await res.json();
                 const json = JSON.parse(data.contents);
 
                 if (json.items && json.items.length > 0) {
                     const imgUrl = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${json.items[0].id}/header.jpg`;
                     cache[clean] = imgUrl;
-                    localStorage.setItem('steam_final_cache', JSON.stringify(cache));
+                    localStorage.setItem('steam_v8_cache', JSON.stringify(cache));
                     imgElement.src = imgUrl;
                 } else { throw new Error(); }
             } catch (e) {
@@ -136,16 +124,28 @@
             }
         }
 
-        // 4. Controls
+        function retryImage(id, title) {
+            updateImage(document.getElementById(`img-${id}`), decodeURIComponent(title));
+        }
+
         function changePage(dir) {
-            currentPage += dir;
+            const totalPages = Math.ceil(filteredGames.length / itemsPerPage);
+            currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
             renderPage();
         }
 
+        function jumpToPage(val) {
+            const page = parseInt(val);
+            const totalPages = Math.ceil(filteredGames.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderPage();
+            }
+        }
+
         searchBox.addEventListener('input', (e) => {
-            const query = e.target.value;
             currentPage = 1;
-            filteredGames = query.length < 2 ? allGames : fuse.search(query).map(r => r.item);
+            filteredGames = e.target.value.length < 2 ? allGames : fuse.search(e.target.value).map(r => r.item);
             renderPage();
         });
     </script>

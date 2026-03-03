@@ -3,164 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ooh whats this</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+    <title>Hello</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <style>
         :root { --bg: #0b0f1a; --card: #161b2c; --accent: #38bdf8; --text: #f1f5f9; --success: #22c55e; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
         
-        /* Sticky Header */
-        .header-sticky { position: sticky; top: 0; background: rgba(11, 15, 26, 0.98); z-index: 1000; padding: 15px; text-align: center; border-bottom: 1px solid #2d3748; }
-        .header-sticky h1 { font-size: 1.8rem; margin: 0; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
-        input { width: 90%; max-width: 500px; padding: 12px 20px; background: #000; border: 1px solid #2d3748; border-radius: 25px; color: white; outline: none; margin-top: 10px; font-size: 15px; }
+        .header { padding: 30px 20px; text-align: center; width: 100%; }
+        .header h1 { font-size: 2.5rem; margin: 0; color: var(--accent); font-weight: 900; }
+        
+        .search-container { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #2d3748; }
+        input { width: 90%; max-width: 600px; padding: 15px 25px; background: #000; border: 2px solid #2d3748; border-radius: 50px; color: white; outline: none; font-size: 16px; transition: 0.3s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
 
-        /* Grid Layout */
-        #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+        #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 20px; width: 100%; max-width: 1300px; box-sizing: border-box; }
         
-        .game-item { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #2d3748; cursor: pointer; transition: transform 0.2s, border-color 0.2s; height: 100%; display: flex; flex-direction: column; }
-        .game-item:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #2d3748; transition: 0.2s; cursor: pointer; }
+        .game-item:hover { border-color: var(--accent); transform: scale(1.02); }
+        .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; }
         
-        .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; border-bottom: 1px solid #2d3748; }
+        .game-content { padding: 15px; }
+        .game-title { font-weight: 700; font-size: 15px; height: 36px; overflow: hidden; line-height: 1.2; }
 
-        .game-content { padding: 15px; flex-grow: 1; }
-        .game-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; height: 35px; overflow: hidden; line-height: 1.2; }
-        
-        .details { display: none; padding-top: 10px; border-top: 1px solid #2d3748; font-size: 11px; color: #94a3b8; }
+        /* Pagination Buttons */
+        .pagination { display: flex; gap: 15px; padding: 40px; align-items: center; }
+        .btn-page { padding: 12px 25px; background: var(--card); border: 1px solid #2d3748; color: white; border-radius: 10px; cursor: pointer; font-weight: 700; transition: 0.2s; }
+        .btn-page:hover:not(:disabled) { background: var(--accent); color: black; }
+        .btn-page:disabled { opacity: 0.3; cursor: not-allowed; }
+        #pageInfo { font-weight: 700; color: #64748b; }
+
+        .details { display: none; padding-top: 10px; margin-top: 10px; border-top: 1px solid #2d3748; font-size: 12px; }
         .details.active { display: block; }
-        
-        .dl-button { display: block; text-align: center; padding: 8px; background: var(--success); color: white; text-decoration: none; border-radius: 6px; font-weight: 800; margin-top: 10px; font-size: 12px; }
-
-        /* Loading Indicator */
-        #sentinel { height: 120px; display: flex; align-items: center; justify-content: center; width: 100%; font-weight: bold; color: var(--accent); }
-        .spinner { border: 3px solid rgba(56, 189, 248, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin-right: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .dl-button { display: block; text-align: center; padding: 10px; background: var(--success); color: white; text-decoration: none; border-radius: 8px; font-weight: 800; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header-sticky">
-        <h1 onclick="window.scrollTo({top:0, behavior:'smooth'})">Use a VPN to download, WIFI might block links!</h1>
-        <input type="text" id="searchBox" placeholder="Search thousands of games...">
+    <div class="header">
+        <h1>Use a VPN to download, WIFI might block links!</h1>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchBox" placeholder="Search 10,000+ games instantly...">
     </div>
 
     <div id="results"></div>
-    <div id="sentinel">
-        <div class="spinner"></div> Loading Database...
+
+    <div class="pagination">
+        <button class="btn-page" id="prevPage" onclick="changePage(-1)">Previous</button>
+        <span id="pageInfo">Page 1</span>
+        <button class="btn-page" id="nextPage" onclick="changePage(1)">Next</button>
     </div>
 
     <script>
         let allGames = [];
         let filteredGames = [];
         let fuse;
-        let currentIndex = 0;
-        const itemsPerPage = 24;
-        const imageCache = JSON.parse(localStorage.getItem('steam_cache_v7') || '{}');
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        const cache = JSON.parse(localStorage.getItem('steam_final_cache') || '{}');
 
-        // Initial Data Fetch
+        // 1. Fetch Data
         fetch('steamrip_games.json')
             .then(res => res.json())
             .then(data => {
                 allGames = data.downloads;
                 filteredGames = allGames;
-                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.35 });
-                document.getElementById('sentinel').innerHTML = '<div class="spinner"></div> Scrolling for more...';
-                loadNextBatch();
+                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.3 });
+                renderPage();
             });
 
-        // FAST INFINITE SCROLL
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
-                loadNextBatch();
-            }
-        });
-
-        function loadNextBatch() {
-            if (currentIndex >= filteredGames.length) {
-                document.getElementById('sentinel').innerText = "End of the line!";
-                return;
-            }
-            const nextBatch = filteredGames.slice(currentIndex, currentIndex + itemsPerPage);
-            renderGames(nextBatch, currentIndex);
-            currentIndex += itemsPerPage;
-        }
-
-        // TITLE CLEANER (Vital for Steam Match)
-        function cleanName(title) {
-            return title.replace(/Free Download/gi, '')
-                        .replace(/\(.*\)/g, '')
-                        .replace(/\[.*\]/g, '')
-                        .replace(/v\d+(\.\d+)*/g, '')
-                        .split(':')[0].trim();
-        }
-
-        async function updateImage(imgElement, title) {
-            const name = cleanName(title);
-            if (imageCache[name]) { imgElement.src = imageCache[name]; return; }
-
-            // Stagger requests slightly to prevent IP blocking
-            await new Promise(r => setTimeout(r, Math.random() * 500));
-
-            try {
-                // Use AllOrigins with a fallback to a direct steam check attempt via images proxy
-                const searchUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + name)}`;
-                const res = await fetch(searchUrl);
-                const data = await res.json();
-                const contents = JSON.parse(data.contents);
-                
-                if (contents.items && contents.items.length > 0) {
-                    const appId = contents.items[0].id;
-                    const finalImg = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
-                    imageCache[name] = finalImg;
-                    localStorage.setItem('steam_cache_v7', JSON.stringify(imageCache));
-                    imgElement.src = finalImg;
-                } else { throw new Error(); }
-            } catch (e) {
-                imgElement.src = `https://placehold.co/600x400/161b2c/38bdf8?text=${name.charAt(0)}`;
-            }
-        }
-
-        function renderGames(games, baseIndex) {
+        // 2. Render Engine
+        function renderPage() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = filteredGames.slice(start, end);
+            
             const container = document.getElementById('results');
-            games.forEach((g, i) => {
-                const idx = baseIndex + i;
+            container.innerHTML = '';
+            window.scrollTo(0,0);
+
+            pageItems.forEach((g, i) => {
                 const div = document.createElement('div');
                 div.className = 'game-item';
                 div.innerHTML = `
-                    <img class="game-cover" id="img-${idx}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
+                    <img class="game-cover" id="img-${i}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
                     <div class="game-content">
                         <div class="game-title">${g.title.replace(' Free Download', '')}</div>
-                        <div id="details-${idx}" class="details">
-                            <div style="margin-bottom:4px">Size: ${g.file_size}</div>
-                            <div style="margin-bottom:10px">Genre: ${g.genre}</div>
-                            <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download Now</a>
+                        <div class="details" id="det-${i}">
+                            <p>Size: ${g.file_size}</p>
+                            <p>Genre: ${g.genre}</p>
+                            <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download</a>
                         </div>
                     </div>
                 `;
-                div.onclick = (e) => {
-                    if (e.target.tagName !== 'A') {
-                        document.getElementById(`details-${idx}`).classList.toggle('active');
-                    }
-                };
+                div.onclick = () => document.getElementById(`det-${i}`).classList.toggle('active');
                 container.appendChild(div);
-
-                // Use Intersection Observer for Images ONLY
-                const imgObserver = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting) {
-                        updateImage(document.getElementById(`img-${idx}`), g.title);
-                        imgObserver.disconnect();
-                    }
-                });
-                imgObserver.observe(div);
+                
+                // Fetch image immediately for these 20
+                updateImage(document.getElementById(`img-${i}`), g.title);
             });
+
+            document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${Math.ceil(filteredGames.length / itemsPerPage)}`;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = end >= filteredGames.length;
         }
 
-        // Search Reset
+        // 3. Image Logic (Prioritized)
+        async function updateImage(imgElement, title) {
+            const clean = title.replace(/Free Download/gi, '').replace(/\(.*\)/g, '').replace(/\[.*\]/g, '').split(':')[0].trim();
+            
+            if (cache[clean]) {
+                imgElement.src = cache[clean];
+                return;
+            }
+
+            try {
+                const proxySearch = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + clean)}`;
+                const res = await fetch(proxySearch);
+                const data = await res.json();
+                const json = JSON.parse(data.contents);
+
+                if (json.items && json.items.length > 0) {
+                    const imgUrl = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${json.items[0].id}/header.jpg`;
+                    cache[clean] = imgUrl;
+                    localStorage.setItem('steam_final_cache', JSON.stringify(cache));
+                    imgElement.src = imgUrl;
+                } else { throw new Error(); }
+            } catch (e) {
+                imgElement.src = `https://placehold.co/600x400/161b2c/38bdf8?text=${clean.charAt(0)}`;
+            }
+        }
+
+        // 4. Controls
+        function changePage(dir) {
+            currentPage += dir;
+            renderPage();
+        }
+
         searchBox.addEventListener('input', (e) => {
-            currentIndex = 0;
-            document.getElementById('results').innerHTML = '';
-            filteredGames = e.target.value.length < 2 ? allGames : fuse.search(e.target.value).map(r => r.item);
-            loadNextBatch();
+            const query = e.target.value;
+            currentPage = 1;
+            filteredGames = query.length < 2 ? allGames : fuse.search(query).map(r => r.item);
+            renderPage();
         });
     </script>
 </body>

@@ -3,76 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamrip Hub | Infinite Fix</title>
+    <title>ooh whats this</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <style>
         :root { --bg: #0b0f1a; --card: #161b2c; --accent: #38bdf8; --text: #f1f5f9; --success: #22c55e; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; }
         
-        .header-sticky { position: sticky; top: 0; background: var(--bg); z-index: 1000; padding: 15px; text-align: center; border-bottom: 1px solid #2d3748; }
-        .header-sticky h1 { font-size: 1.8rem; margin: 0; color: var(--accent); }
-        input { width: 90%; max-width: 500px; padding: 12px 20px; background: #000; border: 1px solid #2d3748; border-radius: 25px; color: white; outline: none; margin-top: 10px; }
+        /* Sticky Header */
+        .header-sticky { position: sticky; top: 0; background: rgba(11, 15, 26, 0.98); z-index: 1000; padding: 15px; text-align: center; border-bottom: 1px solid #2d3748; }
+        .header-sticky h1 { font-size: 1.8rem; margin: 0; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
+        input { width: 90%; max-width: 500px; padding: 12px 20px; background: #000; border: 1px solid #2d3748; border-radius: 25px; color: white; outline: none; margin-top: 10px; font-size: 15px; }
 
-        #results { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-            gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; 
-        }
+        /* Grid Layout */
+        #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
         
-        .game-item { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #2d3748; cursor: pointer; transition: 0.2s; }
-        .game-item:hover { border-color: var(--accent); transform: translateY(-3px); }
-        .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; }
-        .game-content { padding: 15px; }
-        .game-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; height: 35px; overflow: hidden; }
+        .game-item { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #2d3748; cursor: pointer; transition: transform 0.2s, border-color 0.2s; height: 100%; display: flex; flex-direction: column; }
+        .game-item:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        
+        .game-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #1e293b; border-bottom: 1px solid #2d3748; }
+
+        .game-content { padding: 15px; flex-grow: 1; }
+        .game-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; height: 35px; overflow: hidden; line-height: 1.2; }
         
         .details { display: none; padding-top: 10px; border-top: 1px solid #2d3748; font-size: 11px; color: #94a3b8; }
         .details.active { display: block; }
-        .dl-button { display: block; text-align: center; padding: 8px; background: var(--success); color: white; text-decoration: none; border-radius: 6px; font-weight: 800; margin-top: 10px; }
+        
+        .dl-button { display: block; text-align: center; padding: 8px; background: var(--success); color: white; text-decoration: none; border-radius: 6px; font-weight: 800; margin-top: 10px; font-size: 12px; }
 
-        #sentinel { height: 150px; display: flex; align-items: center; justify-content: center; width: 100%; font-weight: bold; color: var(--accent); }
+        /* Loading Indicator */
+        #sentinel { height: 120px; display: flex; align-items: center; justify-content: center; width: 100%; font-weight: bold; color: var(--accent); }
+        .spinner { border: 3px solid rgba(56, 189, 248, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div class="header-sticky">
-        <h1>Use a VPN to download, WIFI might block links!</h1>
-        <input type="text" id="searchBox" placeholder="Search games...">
+        <h1 onclick="window.scrollTo({top:0, behavior:'smooth'})">Use a VPN to download, WIFI might block links!</h1>
+        <input type="text" id="searchBox" placeholder="Search thousands of games...">
     </div>
 
     <div id="results"></div>
-    <div id="sentinel">Scroll down to load more...</div>
+    <div id="sentinel">
+        <div class="spinner"></div> Loading Database...
+    </div>
 
     <script>
         let allGames = [];
         let filteredGames = [];
         let fuse;
         let currentIndex = 0;
-        const itemsPerPage = 20;
-        const imageCache = JSON.parse(localStorage.getItem('steam_cache_v6') || '{}');
+        const itemsPerPage = 24;
+        const imageCache = JSON.parse(localStorage.getItem('steam_cache_v7') || '{}');
 
-        // Load JSON
+        // Initial Data Fetch
         fetch('steamrip_games.json')
             .then(res => res.json())
             .then(data => {
                 allGames = data.downloads;
                 filteredGames = allGames;
-                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.4 });
+                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.35 });
+                document.getElementById('sentinel').innerHTML = '<div class="spinner"></div> Scrolling for more...';
                 loadNextBatch();
             });
 
-        // RE-ENGINEERED SCROLL SYSTEM
+        // FAST INFINITE SCROLL
         window.addEventListener('scroll', () => {
-            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-            // If we are within 500px of the bottom, load more
-            if (scrollTop + clientHeight >= scrollHeight - 500) {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
                 loadNextBatch();
             }
         });
 
         function loadNextBatch() {
             if (currentIndex >= filteredGames.length) {
-                document.getElementById('sentinel').innerText = "End of Database";
+                document.getElementById('sentinel').innerText = "End of the line!";
                 return;
             }
             const nextBatch = filteredGames.slice(currentIndex, currentIndex + itemsPerPage);
@@ -80,24 +85,35 @@
             currentIndex += itemsPerPage;
         }
 
+        // TITLE CLEANER (Vital for Steam Match)
         function cleanName(title) {
-            return title.replace(/Free Download/gi, '').replace(/\(.*\)/g, '').replace(/\[.*\]/g, '').split(':')[0].trim();
+            return title.replace(/Free Download/gi, '')
+                        .replace(/\(.*\)/g, '')
+                        .replace(/\[.*\]/g, '')
+                        .replace(/v\d+(\.\d+)*/g, '')
+                        .split(':')[0].trim();
         }
 
         async function updateImage(imgElement, title) {
             const name = cleanName(title);
             if (imageCache[name]) { imgElement.src = imageCache[name]; return; }
 
+            // Stagger requests slightly to prevent IP blocking
+            await new Promise(r => setTimeout(r, Math.random() * 500));
+
             try {
-                const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + name)}`;
-                const res = await fetch(url);
+                // Use AllOrigins with a fallback to a direct steam check attempt via images proxy
+                const searchUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + name)}`;
+                const res = await fetch(searchUrl);
                 const data = await res.json();
                 const contents = JSON.parse(data.contents);
+                
                 if (contents.items && contents.items.length > 0) {
-                    const img = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${contents.items[0].id}/header.jpg`;
-                    imageCache[name] = img;
-                    localStorage.setItem('steam_cache_v6', JSON.stringify(imageCache));
-                    imgElement.src = img;
+                    const appId = contents.items[0].id;
+                    const finalImg = `https://images.weserv.nl/?url=cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+                    imageCache[name] = finalImg;
+                    localStorage.setItem('steam_cache_v7', JSON.stringify(imageCache));
+                    imgElement.src = finalImg;
                 } else { throw new Error(); }
             } catch (e) {
                 imgElement.src = `https://placehold.co/600x400/161b2c/38bdf8?text=${name.charAt(0)}`;
@@ -115,25 +131,31 @@
                     <div class="game-content">
                         <div class="game-title">${g.title.replace(' Free Download', '')}</div>
                         <div id="details-${idx}" class="details">
-                            <div>Size: ${g.file_size}</div>
-                            <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download</a>
+                            <div style="margin-bottom:4px">Size: ${g.file_size}</div>
+                            <div style="margin-bottom:10px">Genre: ${g.genre}</div>
+                            <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download Now</a>
                         </div>
                     </div>
                 `;
-                div.onclick = () => document.getElementById(`details-${idx}`).classList.toggle('active');
+                div.onclick = (e) => {
+                    if (e.target.tagName !== 'A') {
+                        document.getElementById(`details-${idx}`).classList.toggle('active');
+                    }
+                };
                 container.appendChild(div);
 
-                // Use a standard observer for images (works better than scrolling observer)
-                const observer = new IntersectionObserver((entries) => {
+                // Use Intersection Observer for Images ONLY
+                const imgObserver = new IntersectionObserver((entries) => {
                     if (entries[0].isIntersecting) {
                         updateImage(document.getElementById(`img-${idx}`), g.title);
-                        observer.disconnect();
+                        imgObserver.disconnect();
                     }
                 });
-                observer.observe(div);
+                imgObserver.observe(div);
             });
         }
 
+        // Search Reset
         searchBox.addEventListener('input', (e) => {
             currentIndex = 0;
             document.getElementById('results').innerHTML = '';

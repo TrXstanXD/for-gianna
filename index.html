@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steamrip Web Search</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        input { width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 5px; border: none; }
+        .game-item { background: #333; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; }
+        .game-item:hover { background: #444; }
+        #link-display { background: #000; padding: 20px; border: 1px solid #00ff00; margin-top: 20px; display: none; }
+        .loading { color: yellow; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h1>Steamrip Search</h1>
+    <input type="text" id="searchBox" placeholder="Type a game name...">
+    
+    <div id="results"></div>
+    <div id="link-display"></div>
+
+    <script>
+        let gamesData = [];
+
+        // 1. Load your JSON file
+        fetch('links_reformatted.json')
+            .then(res => res.json())
+            .then(data => { gamesData = data; });
+
+        // 2. Search Function
+        const searchBox = document.getElementById('searchBox');
+        const resultsDiv = document.getElementById('results');
+
+        searchBox.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (query.length < 2) { resultsDiv.innerHTML = ''; return; }
+
+            const matches = gamesData.filter(g => g.name.toLowerCase().includes(query)).slice(0, 10);
+            
+            resultsDiv.innerHTML = matches.map(g => `
+                <div class="game-item" onclick="fetchLinks('${g.url}')">
+                    <strong>${g.name}</strong>
+                </div>
+            `).join('');
+        });
+
+        // 3. Deobfuscate Logic (The Python logic converted to JS)
+        async function fetchLinks(gameUrl) {
+            const display = document.getElementById('link-display');
+            display.style.display = 'block';
+            display.innerHTML = '<p class="loading">Bypassing security... please wait...</p>';
+
+            try {
+                // We use a proxy to avoid CORS errors
+                const proxy = "https://api.allorigins.win/get?url=";
+                const response = await fetch(proxy + encodeURIComponent(gameUrl));
+                const data = await response.json();
+                const html = data.contents;
+
+                // Look for the obfuscated string (The math from your main_ui.py)
+                const match = html.match(/_0x44b739='(.*?)'/);
+                if (match) {
+                    let obfuscated = match[1];
+                    let half = Math.floor(obfuscated.length / 2);
+                    let part1 = obfuscated.substring(0, half).split('').reverse().join('');
+                    let part2 = obfuscated.substring(half).split('').reverse().join('');
+                    let finalUrl = part1 + part2;
+                    
+                    display.innerHTML = `<h3>Links Found:</h3><a href="${finalUrl}" target="_blank" style="color: #00ff00;">${finalUrl}</a>`;
+                } else {
+                    display.innerHTML = "No links found on this page.";
+                }
+            } catch (err) {
+                display.innerHTML = "Error fetching links. Steamrip might be blocking the request.";
+            }
+        }
+    </script>
+</body>
+</html>

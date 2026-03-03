@@ -3,59 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamrip Database</title>
+    <title>Steamrip Hub + Images</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <style>
         :root { --bg: #0b0f1a; --card: #161b2c; --accent: #38bdf8; --text: #f1f5f9; --hover: #1e293b; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 800px; }
+        .container { width: 100%; max-width: 850px; }
         
-        /* Header & Search */
         .header { text-align: center; margin-bottom: 30px; }
         .search-area { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 10px; z-index: 10; }
-        input { flex: 1; padding: 15px; background: var(--card); border: 2px solid #2d3748; border-radius: 12px; color: white; outline: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        input { flex: 1; padding: 15px; background: var(--card); border: 2px solid #2d3748; border-radius: 12px; color: white; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         input:focus { border-color: var(--accent); }
-        .btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-surprise { background: var(--accent); color: #000; }
+        .btn-surprise { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; background: var(--accent); color: #000; transition: 0.3s; }
 
-        /* Daily Section */
         .section-title { font-size: 12px; text-transform: uppercase; color: #64748b; margin: 20px 0 10px; letter-spacing: 1px; }
-        .daily-grid { display: grid; grid-gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 30px; }
-        .daily-card { background: var(--card); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; border: 1px solid #2d3748; text-align: center; }
-
-        /* Game Items & Dropdown */
-        .game-item { background: var(--card); border-radius: 12px; margin-bottom: 10px; overflow: hidden; border: 1px solid #2d3748; transition: 0.3s; }
-        .game-header { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .game-header:hover { background: var(--hover); }
-        .game-title { font-weight: 600; font-size: 16px; }
         
-        .details { display: none; padding: 20px; background: #0f172a; border-top: 1px solid #2d3748; animation: slideDown 0.3s ease-out; }
+        /* Game Grid Styling */
+        #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        
+        .game-item { 
+            background: var(--card); border-radius: 16px; overflow: hidden; 
+            border: 1px solid #2d3748; transition: all 0.3s ease;
+            display: flex; flex-direction: column;
+        }
+        .game-item:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+
+        /* The Image Cover */
+        .game-cover { 
+            width: 100%; height: 140px; background: #2d3748; 
+            object-fit: cover; border-bottom: 1px solid #2d3748;
+        }
+
+        .game-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .game-title { font-weight: 700; font-size: 15px; margin-bottom: 10px; line-height: 1.2; height: 36px; overflow: hidden; }
+        
+        /* Details Dropdown */
+        .details { display: none; padding-top: 15px; border-top: 1px solid #2d3748; margin-top: auto; font-size: 12px; color: #94a3b8; }
         .details.active { display: block; }
         
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 13px; }
-        .meta-item span { color: #64748b; display: block; font-size: 11px; }
-        
-        .dl-button { display: block; text-align: center; padding: 12px; background: #22c55e; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
-        .dl-button:hover { background: #16a34a; }
+        .meta { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .dl-button { 
+            display: block; text-align: center; padding: 10px; background: var(--accent); 
+            color: #000; text-decoration: none; border-radius: 8px; font-weight: 800; margin-top: 15px;
+        }
 
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Daily Picks Slider */
+        .daily-grid { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; scrollbar-width: none; }
+        .daily-card { min-width: 200px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h1>Steamrip Browser 2.0</h1>
-            <p style="color:#64748b">Instant database access with details</p>
+            <h1>Steamrip Hub</h1>
+            <p style="color:#64748b">Now with automatic cover art</p>
         </div>
 
-        <div class="section-title">Editor's Daily Choices</div>
+        <div class="section-title">Today's Featured Games</div>
         <div id="dailyGrid" class="daily-grid"></div>
 
         <div class="search-area">
-            <input type="text" id="searchBox" placeholder="Search 10,000+ games (Fuzzy search enabled)...">
-            <button class="btn btn-surprise" onclick="surpriseMe()">Surprise Me</button>
+            <input type="text" id="searchBox" placeholder="Search for a game...">
+            <button class="btn-surprise" onclick="surpriseMe()">Surprise Me</button>
         </div>
 
         <div id="results"></div>
@@ -65,70 +76,96 @@
         let allGames = [];
         let fuse;
 
-        // Load new JSON
         fetch('steamrip_games.json')
             .then(res => res.json())
             .then(data => {
-                allGames = data.downloads; // Access the 'downloads' array
-                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.35 });
+                allGames = data.downloads;
+                fuse = new Fuse(allGames, { keys: ['title'], threshold: 0.4 });
                 setupDaily();
             });
 
-        function setupDaily() {
-            const today = new Date().toDateString();
-            let daily = JSON.parse(localStorage.getItem('daily_v2'));
-            if (!daily || daily.date !== today) {
-                const shuffled = [...allGames].sort(() => 0.5 - Math.random());
-                daily = { date: today, games: shuffled.slice(0, 4) };
-                localStorage.setItem('daily_v2', JSON.stringify(daily));
-            }
-            renderGames(daily.games, document.getElementById('dailyGrid'), true);
+        // Function to find Steam Image based on Name
+        function getGameCover(title) {
+            // Clean the title (remove "Free Download" and version info for better matching)
+            const cleanTitle = title.split(' Free Download')[0].split('(')[0].trim();
+            // We use a public steam search suggestion API to find the App ID
+            // If it fails, it shows a nice dark gradient placeholder
+            return `https://images.weserv.nl/?url=https://cdn.cloudflare.steamstatic.com/steam/apps/SEARCH_REPLACE/header.jpg&errorredirect=https://placehold.co/600x400/161b2c/38bdf8?text=${encodeURIComponent(cleanTitle)}`;
         }
 
-        function surpriseMe() {
-            const random = allGames[Math.floor(Math.random() * allGames.length)];
-            const results = document.getElementById('results');
-            results.innerHTML = ""; // Clear current
-            renderGames([random], results);
-            toggleDetails(document.getElementById('details-0')); // Auto open
+        async function updateImage(imgElement, title) {
+            const cleanTitle = title.split(' Free Download')[0].split('(')[0].trim();
+            try {
+                // Fetch Steam ID from their search API
+                const searchRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://store.steampowered.com/api/storesearch/?term=' + cleanTitle + '&l=english&cc=US')}`);
+                const searchData = await searchRes.json();
+                const steamResult = JSON.parse(searchData.contents);
+                
+                if (steamResult.items && steamResult.items.length > 0) {
+                    const appId = steamResult.items[0].id;
+                    imgElement.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+                }
+            } catch (e) {
+                console.log("Image not found for " + title);
+            }
+        }
+
+        function setupDaily() {
+            const today = new Date().toDateString();
+            let daily = JSON.parse(localStorage.getItem('daily_v3'));
+            if (!daily || daily.date !== today) {
+                const shuffled = [...allGames].sort(() => 0.5 - Math.random());
+                daily = { date: today, games: shuffled.slice(0, 6) };
+                localStorage.setItem('daily_v3', JSON.stringify(daily));
+            }
+            renderGames(daily.games, document.getElementById('dailyGrid'), 'daily');
         }
 
         const searchBox = document.getElementById('searchBox');
         searchBox.addEventListener('input', (e) => {
             const query = e.target.value;
             if (query.length < 2) { document.getElementById('results').innerHTML = ''; return; }
-            const results = fuse.search(query).slice(0, 15);
-            renderGames(results.map(r => r.item), document.getElementById('results'));
+            const results = fuse.search(query).slice(0, 12);
+            renderGames(results.map(r => r.item), document.getElementById('results'), 'search');
         });
 
-        function renderGames(games, container, isDaily = false) {
-            container.innerHTML = games.map((g, i) => `
-                <div class="game-item">
-                    <div class="game-header" onclick="toggleDetails('details-${isDaily ? 'd' : ''}${i}')">
-                        <span class="game-title">${g.title.replace(' Free Download', '')}</span>
-                        <span style="color:var(--accent)">${isDaily ? '' : '▼'}</span>
-                    </div>
-                    <div id="details-${isDaily ? 'd' : ''}${i}" class="details">
-                        <div class="meta-grid">
-                            <div class="meta-item"><span>VERSION</span>${g.version || 'N/A'}</div>
-                            <div class="meta-item"><span>SIZE</span>${g.file_size || 'Unknown'}</div>
-                            <div class="meta-item"><span>GENRE</span>${g.genre || 'Various'}</div>
-                            <div class="meta-item"><span>UPLOADED</span>${new Date(g.upload_date).toLocaleDateString()}</div>
+        function surpriseMe() {
+            const random = allGames[Math.floor(Math.random() * allGames.length)];
+            renderGames([random], document.getElementById('results'), 'surprise');
+            toggleDetails(document.getElementById('details-surprise0'));
+        }
+
+        function renderGames(games, container, prefix) {
+            container.innerHTML = games.map((g, i) => {
+                const cleanName = g.title.replace(' Free Download', '');
+                return `
+                <div class="game-item" onclick="toggleDetails('details-${prefix}${i}')">
+                    <img class="game-cover" id="img-${prefix}${i}" src="https://placehold.co/600x300/161b2c/161b2c?text=Loading..." alt="cover">
+                    <div class="game-content">
+                        <div class="game-title">${cleanName}</div>
+                        <div id="details-${prefix}${i}" class="details">
+                            <div class="meta"><span>Size:</span> <span>${g.file_size}</span></div>
+                            <div class="meta"><span>Version:</span> <span>${g.version || 'Full'}</span></div>
+                            <a href="${g.download_urls[0]}" target="_blank" class="dl-button">Download Now</a>
                         </div>
-                        ${g.download_urls.map(url => `
-                            <a href="${url}" target="_blank" class="dl-button">Download via Megadb</a>
-                        `).join('')}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
+
+            // After rendering, try to fetch real images for these games
+            games.forEach((g, i) => {
+                const imgEl = document.getElementById(`img-${prefix}${i}`);
+                updateImage(imgEl, g.title);
+            });
         }
 
         function toggleDetails(id) {
-            const el = document.getElementById(id);
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if (!el) return;
             const isVisible = el.classList.contains('active');
-            // Close others
-            document.querySelectorAll('.details').forEach(d => d.classList.remove('active'));
+            // document.querySelectorAll('.details').forEach(d => d.classList.remove('active')); // Uncomment to only allow one open
             if (!isVisible) el.classList.add('active');
+            else el.classList.remove('active');
         }
     </script>
 </body>
